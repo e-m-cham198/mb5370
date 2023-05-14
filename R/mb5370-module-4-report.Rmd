@@ -658,7 +658,7 @@ tm_shape(shelf, bbox = sdat) + #shelf shpfile
 
 ```{r}
 vignette("tmap-getstarted")
-?tmap_options
+?tmap
 ```
 
 ```{r}
@@ -667,8 +667,664 @@ tm_shape(shelf, bbox = sdat) + #shelf shpfile
   tm_shape(aus) + #Aussie shpfile
   tm_polygons() + #plot the polygons
   tm_shape(sdat) + #copepod data
-  tm_dots() + # plot the dot coordinates
-  tmap_style("cobalt") # change the color scheme of the map
+  tm_dots() #+ # plot the dot coordinates
+  #tmap_style("cobalt") # change the color scheme of the map
 ```
+
+#### T-map Vignette Try the example codes
+
+```{r}
+library(tmap) #load the package
+data("World") #built in data from sf package - good for exploring different functions in package
+
+tm_shape(World) + #to plot need to specifiy first with tm_shape (like the first line of ggplot)
+  tm_polygons("HPI") #+ #layer functions can be added after, in this case polygons
+  #tmap_style("classic") #changes the default style of the map
+```
+
+Interactive Maps
+```{r}
+tmap_mode("view") #creates an interactive map where you can zoom in/out, click on attributes to get more information etc
+
+tm_shape(World) +
+  tm_polygons("HPI")
+```
+
+Mutliple shapes and layers
+```{r}
+data(World, metro, rivers, land) #call multiple datasets to use for a single map
+
+tmap_mode("plot") #sets the map mode to plotting
+tm_shape(land) +
+  tm_raster("elevation", palette = terrain.colors(10)) + #draws a raster
+tm_shape(World) +
+  tm_borders("white", lwd = .5) + #draws borders of polygons
+  tm_text("iso_a3", size = "AREA") + #adds labels
+tm_shape(metro) +
+  tm_symbols(col = "red", size = "pop2020", scale = 1) + #adds symbols to represent attributes in this case population
+tm_legend(show = FALSE)
+  
+```
+
+Facets
+Can be created in 3 ways
+1. By assigning multiple variable names to one aesthetic
+```{r}
+tmap_mode("view") #set map mode to view
+tm_shape(World) +
+  tm_polygons(c("HPI", "economy")) + # add polygons for both HPI & economy
+  tm_facets(sync = TRUE, ncol = 2) # adds 2 facets, sync tells R to have both maps synced so you're looking at the same area in each facet
+```
+
+2. By splitting the spatial data with the by argument of tm_facets
+```{r}
+tmap_mode("plot") #set mode to plotting
+data(NLD_muni) #call the data you want to use
+
+NLD_muni$perc_men <- NLD_muni$pop_men / NLD_muni$population *100 #can map a function of the data for example the percent of men created from the above function
+
+tm_shape(NLD_muni) +
+  tm_polygons("perc_men", palette = "RdYlBu") + #add the polygon layers and set the palette
+  tm_facets(by = "province") # facet the map by province
+
+```
+
+3. By using the **tmap_arrange** function
+```{r}
+tmap_mode("plot") #set mode to plotting
+
+data(NLD_muni)
+tm1 <- tm_shape(NLD_muni) + tm_polygons("population", convert2density = TRUE) #polygon map
+tm2 <- tm_shape(NLD_muni) + tm_bubbles(size = "population") #circles correspond to population size
+
+tmap_arrange(tm1, tm2) #arranges the two separate maps into one map with two facets
+```
+
+Basemaps and overlay tile maps
+```{r}
+tmap_mode("view") #set mode to interactive
+tm_basemap("Stamen.Watercolor") + #  draws the tile layer as basemap (i.e. as bottom layer)
+  tm_shape(metro) + tm_bubbles(size = "pop2020", col = "red") +
+  tm_tiles("Stamen.TonerLabels") #draws the tile layer as overlay layer (where the stacking order corresponds to the order in which this layer is called)
+```
+
+Options and styles
+```{r}
+tmap_mode("plot") #set mode to plotting
+
+tm_shape(World) +
+  tm_polygons("HPI") +
+tm_layout(bg.color = "skyblue", inner.margins = c(0, .02, .02, .02)) #this can be set globally using tmap_options so they don't have to be specified for each map
+
+
+
+tmap_options(bg.color = "black", legend.text.color = "white")
+tmap_mode("plot")
+tm_shape(World) +
+  tm_polygons("HPI", legend.title = "Happy Planet Index")
+
+tmap_style("classic") #set map style to "classic"
+tm_shape(World) +
+  tm_polygons("HPI", legend.title = "Happy Planet Index")
+
+tmap_options_diff() #see what options have been changed
+
+tmap_options_reset() #resets options back to the default
+
+#New styles can be created, see ?tmap_options
+
+```
+
+Exporting
+
+tm <- tm_shape(World) +
+    tm_polygons("HPI", legend.title = "Happy Planet Index")
+
+## save an image ("plot" mode)
+tmap_save(tm, filename = "world_map.png")
+
+## save as stand-alone HTML file ("view" mode)
+tmap_save(tm, filename = "world_map.html")
+
+
+Quick thematic map - make a thematic map with one function call
+```{r}
+qtm(World, fill = "HPI", fill.pallete = "RdYlBu")
+```
+For tips and tricks run:
+```{r}
+tmap_tip()
+```
+
+## Making maps with R tutorial
+
+```{r}
+#for loading the data
+library(raster)
+library(readr)
+library(readxl)
+library(sf)
+
+#for datasets
+#install.packages("maps")
+library(maps)
+#install.packages("spData")
+library(spData)
+
+
+#for creating animations
+#install.packages("magick")
+library(magick)
+
+#for plotting
+#install.packages("grid")
+library(grid)
+library(tmap)
+library(viridis)
+```
+
+Load Data
+```{r}
+#Load shapefile for bavaria
+bavaria <- read_sf("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/bavaria.shp")
+
+#Load raster file for europe
+europe_raster <- raster("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/elevation1x1_new.tif")
+
+#Load shapefile for world
+world_shape <- read_sf("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/ne_50m_admin_0_countries.shp")
+
+#keep only europe
+europe_shape <- world_shape[world_shape$CONTINENT == "Europe",]
+
+#use world.cities from the maps package
+#keep only cities with at least 1 million inhabitants
+cities <- world.cities[world.cities$pop >= 1000000, ]
+
+#turn it into an sf object
+cities <- cities %>%
+  st_as_sf(coords = c("long", "lat"), crs = 4326) %>%
+  st_cast("POINT")
+
+#keep only cities that are in europe
+cities <- st_intersection(cities, st_union(europe_shape))
+
+#turn the europe object into a MULTILINESTRING
+europe_shape <- st_cast(europe_shape, "MULTILINESTRING")
+communities <- read_sf("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/gmd_ex.shp")
+
+#keep only the ones in rosenheim
+rosenheim <- communities[communities$BEZ_KRS == "Rosenheim", ]
+
+#Load the csv file for honey production
+honey_csv <- read_csv("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/honeyproduction.csv")
+
+#Load the xlsx file for abbreviations of the us states
+abbrev <- read_xlsx("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/abbrev.xlsx")
+
+#Load honey shapefile
+honey_sf <- read_sf("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/honey.shp")
+```
+
+Static maps with tmap
+
+```{r}
+bav1 <- tm_shape(bavaria) +
+  tm_fill() #fills the individual polygons
+bav2 <-tm_shape(bavaria) +
+  tm_borders() #draws the borders of the individual polygons
+bav3 <- tm_shape(bavaria) +
+  tm_polygons() #ombines the two functions and displays both at the same time
+
+#save the map as an object
+map_europe <- tm_shape(europe_raster) + #saved object can be extended or retrieved at later time or additonal layers can be added
+  tm_raster()
+class(map_europe)
+
+map_europe2 <- map_europe +
+  tm_shape(europe_shape) +
+  tm_lines(alpha = 0.3)
+map_europe3 <- map_europe2 +
+  tm_shape(cities) +
+  tm_dots(size = 0.3)
+map_europe2 #view the maps
+map_europe3
+
+tmap_arrange(bav1, bav2, bav3, ncol = 3) #multiple maps can be displayed next to or on top of one another
+```
+
+Change the aesthetics. Unlike ggplot with aes() arguments are passed directly. Some useful ones are fill color (col), transparency (alpha), line width (lwd), and line style (lty)
+
+```{r}
+bav4 <- tm_shape(bavaria) +
+  tm_fill(col = "aquamarine")
+bav5 <- tm_shape(bavaria) +
+  tm_fill(col = "aquamarine", alpha = 0.5)
+bav6 <- tm_shape(bavaria) +
+  tm_polygons(col = "aquamarine", border.col = "darkolivegreen")
+bav7 <- tm_shape(bavaria) +
+  tm_borders(lwd = 2)
+bav8 <- tm_shape(bavaria) +
+  tm_polygons(col = "#E2E2E2", border.alpha = 0.5, lwd = 3)
+tmap_arrange(bav1, bav4, bav5, bav6, bav7, bav8, ncol = 3)
+```
+Another difference to ggplot is that the variable names must be passed as characters and the $ operator can't be used
+
+```{r}
+tm_shape(bavaria) +
+  tm_polygons(col = bavaria$pop_development)
+```
+Needs to be written as follows
+```{r}
+tm_shape(bavaria) +
+  tm_polygons(col = "pop_development", midpoint = 0)
+```
+
+```{r}
+#make column names easier to work with
+colnames(bavaria) <- c(
+  "place", "type", "gdp_per_capita", "mean_age",
+  "pop_density", "unemployment_rate",
+  "employment_rate", "household_income",
+  "students", "pop_development", "geometry"
+)
+tm_shape(bavaria) +
+  tm_polygons("pop_development", midpoint = 0) + #midpoint argument is used to set 0 as the natural midpoint
+  tm_layout(legend.outside = TRUE)
+#shows population is decreasing in northern bavaria
+
+pal <- colorRampPalette(c("orange", "green"))
+bavaria$order <- findInterval(bavaria$pop_development, sort(bavaria$pop_development))
+plot(st_geometry(bavaria), col = pal(nrow(bavaria))[bavaria$order]) 
+```
+To use other intervals you can pass manual bins to the breaks argument or use n to specify the number of bins
+
+```{r}
+tm_shape(bavaria) +
+  tm_polygons(col = "mean_age")
+tm_shape(bavaria) +
+  tm_polygons(col = "mean_age", breaks = c(40, 42, 46, 54))
+tm_shape(bavaria) +
+  tm_polygons(col = "mean_age", n = 3)
+```
+
+An alternate is the *style* argument. It allows the user to automatically create breaks by specifying algorithms. Here are some of the styles that can be used:
+ - style = pretty: round interval boundaries to whole numbers (default settings)
+ - style - equal: splits the variable into intervals of equal length. Should only be used if variable follows a uniform distribution
+ - style = quantile: Splits the variable into quantiles. Consequently there are the same number of observations in each interval.
+ - style = jenks: Identifies groups with similar values and maximizes the difference between them.
+ - style = cont: Displays many colors over a continuous palette.
+ - style = cat: Colors each category individually for categorical data.
+Other possibilities are: cat, fixed, sd, kmeans, hclust, bclust, and fisher. 
+```{r, , fig.align="center",fig.cap="Diffrent styles", echo = FALSE, fig.width= 8, fig.height= 8, warning=FALSE, message=FALSE}
+ba41 <- tm_shape(bavaria) +
+  tm_polygons(col = "unemployment_rate", style = "pretty", title = "unemp_rate") +
+  tm_credits('style = "pretty"', size = 1) +
+  tm_layout(inner.margins = 0.1)
+ba51 <- tm_shape(bavaria) +
+  tm_polygons(col = "unemployment_rate", style = "equal", title = "unemp_rate") +
+  tm_credits('style = "equal"', size = 1) +
+  tm_layout(inner.margins = 0.1)
+ba61 <- tm_shape(bavaria) +
+  tm_polygons(col = "unemployment_rate", style = "quantile", title = "unemp_rate") +
+  tm_credits('style = "quantile"', size = 1) +
+  tm_layout(inner.margins = 0.1)
+ba71 <- tm_shape(bavaria) +
+  tm_polygons(col = "unemployment_rate", style = "jenks", title = "unemp_rate") +
+  tm_credits('style = "jenks"', size = 1) +
+  tm_layout(inner.margins = 0.1)
+ba81 <- tm_shape(bavaria) +
+  tm_polygons(col = "unemployment_rate", style = "cont", title = "unemp_rate") +
+  tm_credits('style = "cont"', size = 1) +
+  tm_layout(inner.margins = 0.1)
+ba91 <- tm_shape(bavaria) +
+  tm_polygons(col = "type", style = "cat") +
+  tm_credits('style = "cat"', size = 1) +
+  tm_layout(inner.margins = 0.1)
+tmap_arrange(ba41, ba51, ba61, ba71, ba81, ba91, ncol = 3)
+```
+You can further customize the map further by choosing the color of the individual classes using the palette argument from RColorBrewer or Viridis
+
+```{r}
+tm_shape(bavaria) +
+  tm_polygons(col = "unemployment_rate", palette = "viridis")
+tm_shape(bavaria) +
+  tm_polygons( col = "unemployment_rate", palette = "-viridis")
+```
+
+Adding additional elements including compass, scale bar, logo etc
+
+```{r}
+tm_shape(bavaria) +
+  tm_polygons(col = "type", pal = c("white", "skyblue")) + #polygon layer and color palette
+  tm_logo("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/bavaria.png", height = 2) + #add a logo to the map
+  tm_scale_bar(position = c("left", "bottom"), width = 0.15) + #add the scale bar
+  tm_compass(position = c("left", "top"), size = 2) #Add a north arrow
+```
+
+```{r}
+tm_shape(bavaria) +
+  tm_polygons() +
+  tm_layout(title = "Bavaria", bg.color = "#228B22")
+
+tm_shape(bavaria) +
+  tm_polygons() +
+  tm_layout(scale = 3, frame = FALSE)
+
+tm_shape(bavaria) +
+  tm_polygons(col = "type") +
+  tm_layout(frame.lwd = 3, legend.position = c("left", "bottom"))
+
+tm_shape(bavaria) +
+  tm_polygons(col = "type") +
+  tm_layout(inner.margins = 0.2, legend.show = F)
+```
+
+Can also change the font and font size, as well as other visual filters
+
+```{r}
+tm_shape(bavaria) +
+  tm_polygons(col = "type") +
+  tm_style("classic") #change the style
+
+tm_shape(bavaria) +
+  tm_polygons(col = "type") +
+  tm_style("col_blind") #change the style colorblind friendly
+```
+
+Can also customize by combining several small maps into one large
+
+```{r}
+bbox <- st_bbox(rosenheim, crs = 4326) %>%
+  st_as_sfc()
+map_rosenheim <- tm_shape(rosenheim) +
+  tm_polygons()
+map_bavaria <- tm_shape(bavaria) +
+  tm_polygons() +
+  tm_shape(bbox) +
+  tm_polygons(alpha = 0, border.col = "red", lwd = 3)
+map_rosenheim
+print(map_bavaria, vp = grid::viewport(0.8, 0.185, width = 0.2, height = 0.45)) #includes an inset to better display the information
+
+```
+
+```{r}
+us_states2163 <- st_transform(us_states, 2163) #projection of states changed to an equal area projection
+
+#difference between largest and smallest y values calculated for each of the three maps
+us_states_range <- st_bbox(us_states2163)[4] - st_bbox(us_states2163)[2]
+hawaii_range <- st_bbox(hawaii)[4] - st_bbox(hawaii)[2] #to do this bounding boxes are used
+alaska_range <- st_bbox(alaska)[4] - st_bbox(alaska)[2]
+us_states_hawaii_ratio <- hawaii_range / us_states_range
+us_states_alaska_ratio <- alaska_range / us_states_range
+
+#Next create the three maps, legend.is.portrait =FALSE ensures the legend is arranged horizontally instead of vertically
+
+us_states_map <- tm_shape(us_states2163) +
+  tm_polygons(
+    col = "total_pop_15", #color scale
+    breaks = c(
+      0, 5000000, 10000000, 15000000, 20000000, #set breaks in scale
+      25000000, 30000000, 35000000, 40000000
+      ),
+    title = "Population 2015 in millions",
+    pal = c("#E1F5C4", "#EDE574", "#F9D423", "#FC913A", "#FF4E50"), #color palette
+    labels = c( #labels for the legend
+      "0-5", "5-10", "10-15", "15-20", "20-25",
+      "25-30", "30-35", "35-40"
+      ),
+    legend.is.portrait = FALSE) +
+  tm_layout(
+    frame = FALSE,
+    legend.outside = TRUE,
+    legend.outside.position = "bottom"
+    )
+hawaii_map <- tm_shape(hawaii) +
+  tm_polygons(
+    col = "total_pop_15",
+    breaks = c(
+      0, 5000000, 10000000, 15000000, 20000000,
+      25000000, 30000000, 35000000, 40000000
+      ),
+    pal = c("#E1F5C4", "#EDE574", "#F9D423", "#FC913A", "#FF4E50")) +
+  tm_layout(
+    title = "Hawaii",
+    frame = FALSE,
+    bg.color = NA,
+    legend.show = FALSE,
+    title.position = c("LEFT", "BOTTOM")
+    )
+alaska_map <- tm_shape(alaska) +
+  tm_polygons(
+    col = "total_pop_15",
+    breaks = c(
+      0, 5000000, 10000000, 15000000, 20000000,
+      25000000, 30000000, 35000000, 40000000),
+    pal = c("#E1F5C4", "#EDE574", "#F9D423", "#FC913A", "#FF4E50")) +
+  tm_layout(
+    title = "Alaska",
+    frame = FALSE,
+    bg.color = NA,
+    legend.show = FALSE,
+    title.position = c("LEFT", "TOP")
+    )
+
+```
+
+With grid.layout, a window with 2 rows and one column
+```{r}
+pushViewport(
+  viewport(
+    layout = grid.layout(
+      2, 1, heights = unit(c(us_states_alaska_ratio, 1), "null")
+      )
+    )
+  )
+print(
+  alaska_map,
+  vp = viewport(layout.pos.row = 1)
+  )
+print(
+  us_states_map,
+  vp = viewport(layout.pos.row = 2)
+  )
+print(
+  hawaii_map,
+  vp = viewport(
+    x = 0.1, y = 0.07,
+    height = us_states_hawaii_ratio / sum(c(us_states_alaska_ratio, 1))
+    )
+  )
+grid.lines(x = c(0, 1), y = c(0.58, 0.58), gp = gpar(lty = 2))
+grid.lines(x = c(0, 0.2), y = c(0.33, 0), gp = gpar(lty = 2))
+```
+
+If a temporal variable is to be plotted, this is difficult to do with a map, because the geometries would often overlap. Especially in these cases the use of faceted maps is useful. The function has five important arguments:
+
+ - by: According to which variable should be split?
+ - nrow / ncol: The number of rows or columns of the facets
+ - free.cords: Should each individual map have its own coordinate system?
+ - along: Which variable should be used for animation?
+ 
+```{r}
+honey0912 <- honey_csv[honey_csv$year > 2008, ] #select the years starting in 2009
+honey0912 <- rbind( # bind missing data to the original data
+  honey0912,
+  #create an empty matrix for all states that are missing
+  matrix(
+    NA,
+    ncol = ncol(honey0912),
+    nrow = 4 * length(
+      unique(abbrev$state)[!unique(abbrev$state) %in% unique(honey0912$state)]
+    ), dimnames = list(
+      c(
+        seq_len(
+          4 * length(
+            unique(abbrev$state)[!unique(abbrev$state) %in% unique(honey0912$state)])
+          )
+        ),
+      colnames(honey0912)
+      )
+    )
+  )
+# add the missing state names
+honey0912[
+  is.na(honey0912$state), ]$state <- sort(
+    rep(unique(abbrev$state)[!unique(abbrev$state) %in% unique(honey0912$state)], 4)
+    )
+# add the year for the missing states
+honey0912[is.na(honey0912$year), ]$year <- rep(2009:2012, 10)
+# merge the honey dataset with the state abbreviations
+honey0912 <-  merge.data.frame(honey0912, abbrev, by = "state")
+# change the colnames of our two datasets for merging
+colnames(honey0912)[c(1, 9)] <- c("short", "State")
+# use the us_states data from spData
+colnames(us_states)[2] <- "State"
+# remove the district of columbia from the us_states dataset from spData
+us_states <- us_states[us_states$State != "District of Columbia", ]
+# merge the data together
+honey0912 <- merge(honey0912, us_states[, c(2, 7)], by = "State", all.y = TRUE)
+# turn it into an sf object
+honey0912 <- st_as_sf(honey0912)
+tm_shape(honey0912) +
+  tm_polygons(
+    col = "priceperlb",
+    style = "cont",
+    pal = viridis(10, direction = -1),
+    title = "Price in US$ per lb"
+    ) +
+  tm_facets(by = "year", ncol = 2) +
+  tm_layout(legend.outside.size = 0.2)
+
+```
+
+#### Animated maps using magick
+
+```{r}
+#install.packages("installr")
+library(installr)
+#install.packages("gifski")
+library(gifski)
+
+installr::install.imagemagick()
+
+honey_animation <- tm_shape(honey_sf) +
+  tm_polygons(
+    col = "prcprlb",
+    style = "cont",
+    pal = viridis(10, direction = -1)
+    ) +
+  tm_facets(along = "year") +
+  tm_layout(legend.position = c("left", "bottom"))
+tmap_animation(
+  honey_animation, filename = "honey.gif",
+  delay = 50, width = 2400, height = 1200
+  )
+```
+
+### Interactive maps with R
+
+```{r}
+tmap_mode("view")
+
+tm_shape(bavaria) +
+  tm_polygons(col = "pop_development", midpoint = 0) +
+  tm_basemap("Stamen.Watercolor")
+```
+
+```{r}
+tm_shape(bavaria) +
+  tm_polygons(col = "unemployment_rate") +
+  tm_facets(by = "type") #create multiple facets within the view mode
+```
+
+```{r}
+accidents <- read_csv("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/accidents.csv") #load dataset
+
+accidents <- accidents %>%
+  st_as_sf(coords = c("Longitude", "Latitude"), crs = 4326) %>%
+  st_cast("POINT") #transform to sf
+
+london <- read_sf("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/making_maps_with_r-master/datasets/chapter_2/London_Borough_Excluding_MHW.shp") %>%
+  st_transform(4326)#load dataset
+
+london_union <- st_union(london)
+accidents_m <- st_intersects(london_union, accidents) #intersects calculated
+accidents <- accidents[unlist(accidents_m)]
+
+#select districts and calculate intersects
+london <- london[london$NAME %in% c("City of London", "Westminster", "Camden"), ]
+london <- st_union(london)
+accidents_m <- st_intersects(london, accidents)
+accidents <- accidents[unlist(accidents_m), ]
+
+
+#Display the map
+
+# do some ordering for the legend
+accidents$Light_Conditions <- ordered(
+  accidents$Light_Conditions,
+  levels = c(
+    "Daylight",
+    "Darkness - lights lit",
+    "Darkness - lighting unknown",
+    "Darkness - lights unlit",
+    "Darkness - no lighting",
+    "Data missing or out of range"
+    )
+  )
+# define the map
+map_london <- tm_shape(accidents) +
+  tm_dots(
+    group = "2017",
+    col = "Light_Conditions",
+    palette = "Dark2",
+    popup.vars = TRUE
+    ) +
+  tm_view(
+    alpha = 1,
+    basemaps = "Esri.WorldTopoMap"
+    )
+map_london
+```
+
+```{r}
+#install.packages(c("dbscan", "dplyr", "extrafont", "geosphere", "ggplot2", "ggspatial", "grid",
+ # "jsonlite", "lattice", "leaflet", "leaflet.extras", "leafpop", "magick", "mapdeck",
+  #"magrittr", "maps", "mapview", "nycflights13", "openrouteservice", "patchwork",
+  #"raster", "RColorBrewer", "readr", "readxl", "rgdal", "scico", "sf", "spData",
+  #"tmap", "vapoRwave", "viridis"))
+library(c("dbscan", "dplyr", "extrafont", "geosphere", "ggplot2", "ggspatial", "grid",
+  "jsonlite", "lattice", "leaflet", "leaflet.extras", "leafpop", "magick", "mapdeck",
+  "magrittr", "maps", "mapview", "nycflights13", "openrouteservice", "patchwork",
+  "raster", "RColorBrewer", "readr", "readxl", "rgdal", "scico", "sf", "spData",
+  "tmap", "vapoRwave", "viridis"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
