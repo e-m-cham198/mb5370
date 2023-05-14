@@ -1,0 +1,253 @@
+```{r, echo=FALSE, include=FALSE}
+honey_sf <- read_sf("datasets/chapter_3/honey.shp")
+colnames(honey_sf)[3:8] <- c("Number_of_colonies", "Yield_per_colony",
+                          "Total_production", "Stocks","Price_per_lb",
+                          "Value_of_production"
+)
+honey2008 <- honey_sf[honey_sf$year == 2008, ]
+state_capitals <- fromJSON("https://raw.githubusercontent.com/vega/vega/master/docs/data/us-state-capitals.json")
+state_capitals_sf <- st_as_sf(state_capitals, coords = c("lon", "lat"), crs = 4326)
+state_capitals_sf <- state_capitals_sf[!state_capitals_sf$state %in% c("Alaska", "Hawaii"), ]
+honey2008_multiline <- st_cast(honey2008, "MULTILINESTRING")
+```
+# ggplot2
+`ggplot2` excels at visualizing all kinds of data and is the "go to package" for most applications, so it should come as no surprise that you can also visualize spatial data with it. For this chapter we will use several extensions to `ggplot2' to create our plots.
+```{r, eval=FALSE}
+# for loading our data
+library(jsonlite)
+library(rgdal)
+library(sf)
+# for plotting
+library(extrafont)
+library(ggplot2)
+library(ggspatial)
+library(patchwork)
+library(scico)
+library(vapoRwave)
+# for data wrangling
+library(dplyr)
+```
+
+## Data used
+We won't be using a lot of data in this chapter.
+```{r, eval=FALSE}
+# load honey shapefile
+honey_sf <- read_sf("honey.shp")
+# get the data for 2008
+honey2008 <- honey_sf[honey_sf$year == 2008, ]
+# create a MULTILINESTRING object
+honey2008_multiline <- st_cast(honey2008, "MULTILINESTRING")
+# load state capitals of the US
+state_capitals <- fromJSON(
+  "https://raw.githubusercontent.com/vega/vega/master/docs/data/us-state-capitals.json"
+  )
+# turn it into an sf object
+state_capitals_sf <- st_as_sf(state_capitals, coords = c("lon", "lat"), crs = 4326)
+# remove alaska and hawaii
+state_capitals_sf <- state_capitals_sf[
+  !state_capitals_sf$state %in% c("Alaska", "Hawaii"),
+  ]
+```
+
+## Using ggplot2 to create maps
+The easiest way to create spatial plots with ggplot is to use the `geom_sf()` function. By default there is no aesthetic mapping, but we can use arguments like `fill` to easily create choropleth maps.
+
+```{r, fig.align="center", fig.cap="Basic use of ggplot2 for spatial data"}
+usa_1 <- ggplot(data = honey2008) +
+  geom_sf()
+usa_2 <- ggplot(data = honey2008) +
+  geom_sf(aes(fill = Price_per_lb)) +
+  ggtitle(label = "The Honey crisis of 2008", subtitle = "Price per lb")
+usa_1 / usa_2
+```
+
+Using the `annotation_*()` functions of `ggspatial` we can customize our maps by adding a base map or other elements to our map.
+
+```{r, fig.align="center", fig.cap="Adding a basemap and some elements",warning=FALSE,message=FALSE}
+ggplot(data = honey2008) +
+  annotation_map_tile("stamenwatercolor") +
+  geom_sf(aes(fill = Price_per_lb), alpha = 0.8) +
+  annotation_scale() +
+  scale_fill_viridis_c() +
+  ggtitle(label = "The Honey crisis of 2008", subtitle = "Price per lb")
+```
+
+We can also use the packages `vapoRwave` and `extrafonts`, do some magic and then create some vibey maps.
+
+```{r, fig.align="center",fig.cap= "A E S T H E T I C"}
+ggplot(data = honey2008_multiline) +
+  geom_sf(color = "#FF6B58", alpha = 0.1,  size = 4) +
+  geom_sf(color = "#FF6B58", alpha = 0.1,  size = 3) +
+  geom_sf(color = "#FF6B58", alpha = 0.2,  size = 2) +
+  geom_sf(color = "#FF6B58", alpha = 0.2,  size = 1) +
+  geom_sf(color = "#FF6B58", alpha = 1,  size = 0.5) +
+  geom_sf(color = "#F8B660", alpha = 0.1, size = 6, data = state_capitals_sf) +
+  geom_sf(color = "#F8B660", alpha = 0.1, size = 5, data = state_capitals_sf) +
+  geom_sf(color = "#F8B660", alpha = 0.2, size = 4, data = state_capitals_sf) +
+  geom_sf(color = "#F8B660", alpha = 0.2, size = 3, data = state_capitals_sf) +
+  geom_sf(color = "#F8B660", alpha = 0.4, size = 2, data = state_capitals_sf) +
+  geom_sf(color = "#F8B660", alpha = 1, size = 1, data = state_capitals_sf) +
+  labs(subtitle="An aesthetic look",
+       title="US States and their Captials", 
+       caption = "Excluding Alaska and Hawaii") + 
+  new_retro() + 
+  scale_colour_newRetro() +
+  guides(size = guide_legend(override.aes = list(colour = "#FA5F70FF"))) +
+  theme(
+    panel.grid.major = element_blank()
+  )
+```
+
+You can also go completely crazy, as Timo Grossenbacher did in his blog, and create maps like the one below.
+
+```{r, warning=FALSE,message=FALSE,include=FALSE}
+theme_map <- function(...) {
+  theme_minimal() +
+  theme(
+    text = element_text(family = "Ubuntu Regular", color = "#22211d"),
+    axis.line = element_blank(),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    # panel.grid.minor = element_line(color = "#ebebe5", size = 0.2),
+    panel.grid.major = element_line(color = "#ebebe5", size = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.background = element_rect(fill = "#f5f5f2", color = NA), 
+    panel.background = element_rect(fill = "#f5f5f2", color = NA), 
+    legend.background = element_rect(fill = "#f5f5f2", color = NA),
+    panel.border = element_blank(),
+    ...
+  )
+}
+data <- read.csv("datasets/chapter_2/switzerland/input/avg_age_15.csv", stringsAsFactors = FALSE)
+gde_15 <- readOGR("datasets/chapter_2/switzerland/input/geodata/gde-1-1-15.shp", layer = "gde-1-1-15")
+# set crs to ch1903/lv03, just to make sure  (EPSG:21781)
+crs(gde_15) <- "+proj=somerc +lat_0=46.95240555555556 
++lon_0=7.439583333333333 +k_0=1 +x_0=600000 +y_0=200000 
++ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs"
+# fortify, i.e., make ggplot2-compatible
+map_data_fortified <- fortify(gde_15, region = "BFS_ID") %>% 
+  mutate(id = as.numeric(id))
+# now we join the thematic data
+map_data <- map_data_fortified %>%
+  left_join(data, by = c("id" = "bfs_id"))
+# whole municipalities
+gde_15_political <- readOGR("datasets/chapter_2/switzerland/input/geodata/g1g15.shp", layer = "g1g15")
+crs(gde_15_political) <- "+proj=somerc +lat_0=46.95240555555556 
++lon_0=7.439583333333333 +k_0=1 +x_0=600000 +y_0=200000 
++ellps=bessel +towgs84=674.374,15.056,405.346,0,0,0,0 +units=m +no_defs"
+map_data_political_fortified <- fortify(gde_15_political, region = "GMDNR") %>% 
+  mutate(id = as.numeric(id))
+map_data_political <- map_data_political_fortified %>%
+  left_join(data, by = c("id" = "bfs_id"))
+map_data_political <- map_data_political[complete.cases(map_data_political),]
+# read in background relief
+relief <- raster("datasets/chapter_2/switzerland/input/geodata/02-relief-georef-clipped-resampled.tif")
+relief_spdf <- as(relief, "SpatialPixelsDataFrame")
+# relief is converted to a very simple data frame, 
+# just as the fortified municipalities.
+# for that we need to convert it to a 
+# SpatialPixelsDataFrame first, and then extract its contents 
+# using as.data.frame
+relief <- as.data.frame(relief_spdf) %>% 
+  dplyr::rename(value = `X02.relief.georef.clipped.resampled`)
+# remove unnecessary variables
+rm(relief_spdf)
+rm(gde_15)
+rm(map_data_fortified)
+rm(map_data_political_fortified)
+pretty_breaks <- c(40,42,44,46,48)
+# find the extremes
+minVal <- min(map_data$avg_age_15, na.rm = TRUE)
+maxVal <- max(map_data$avg_age_15, na.rm = TRUE)
+# compute labels
+labels <- c()
+brks <- c(minVal, pretty_breaks, maxVal)
+# round the labels (actually, only the extremes)
+for(idx in 1:length(brks)){
+  labels <- c(labels,round(brks[idx + 1], 2))
+}
+labels <- labels[1:length(labels)-1]
+# define a new variable on the data set just as above
+map_data$brks <- cut(
+  map_data$avg_age_15, 
+  breaks = brks, 
+  include.lowest = TRUE,
+  labels = labels
+  )
+brks_scale <- levels(map_data$brks)
+labels_scale <- rev(brks_scale)
+```
+
+```{r, fig.align="center",fig.cap="Map of Switzerland using ggplot2", warning=FALSE,message=FALSE}
+ggplot() +
+    # raster comes as the first layer, municipalities on top
+    geom_raster(
+      data = relief, aes(
+        x = x, 
+        y = y, 
+        alpha = value
+        )
+      ) +
+    # use the "alpha hack"
+    scale_alpha(name = "", range = c(0.6, 0), guide = FALSE)  + 
+    # municipality polygons
+    geom_polygon(
+      data = map_data, aes(
+        fill = brks, 
+        x = long, 
+        y = lat, 
+        group = group
+        )
+      ) +
+    # municipality outline
+    geom_path(
+      data = map_data, aes(
+        x = long, 
+        y = lat, 
+        group = group
+        ), 
+      color = "white",
+      size = 0.1
+      ) +
+    # apart from that, nothing changes
+    coord_equal() +
+    theme_map() +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(hjust = 0.5),
+      plot.subtitle = element_text(hjust = 0.5)
+      ) +
+    labs(
+      x = NULL, 
+      y = NULL, 
+      title = "Switzerland's regional demographics", 
+      subtitle = "Average age in Swiss municipalities, 2015", 
+      caption = "Geometries: ThemaKart, BFS; Data: BFS, 2016; Relief: swisstopo, 2016"
+      ) + 
+    scale_fill_manual(
+      values = rev(scico(8, palette = "davos")[2:7]),
+      breaks = rev(brks_scale),
+      name = "Average age",
+      drop = FALSE,
+      labels = labels_scale,
+      guide = guide_legend(
+        direction = "horizontal",
+        keyheight = unit(2, units = "mm"), 
+        keywidth = unit(70/length(labels), units = "mm"),
+        title.position = 'top',
+        title.hjust = 0.5,
+        label.hjust = 1,
+        nrow = 1,
+        byrow = TRUE,
+        reverse = TRUE,
+        label.position = "bottom"
+      )
+    )
+```
+
+Overall, `ggplot2` is a great way to easily create geographic maps if you don't want to learn a new plotting package.
+
+[@ggswitz]

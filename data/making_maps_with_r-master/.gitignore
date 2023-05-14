@@ -1,0 +1,9 @@
+.Rhistory
+.Rproj.user/
+*.Rproj
+rsconnect/
+.RData
+_book/
+rosm.cache/
+*.env
+_bookdown_files/
