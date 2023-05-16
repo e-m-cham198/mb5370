@@ -1,0 +1,94 @@
+---
+title: "MB5371_Mod4_End-to-end"
+author: "Emilee Chamberland"
+date: "2023-05-14"
+output: html_document
+---
+**Workspace**: "C:\Users\custo\OneDrive\Documents\JCU _2023\SP1\MB5370\Module4_R\github\mb5370\data\catchment_data.csv"
+
+## Loading Package
+
+First I loaded all the packages that I needed to complete the analysis. These packages are the tidyverse package which includes ggplot2, RColorBrewer and the NatParksPalettes (downloaded from Kevin Blake's Github repository), all of which I utilized to visualize the data.
+```{r}
+#Load tidyverse
+library(tidyverse)
+#Install ColorBrewer
+#install.packages("RColorBrewer")
+library(RColorBrewer)
+#install.packages("NatParksPalettes")
+library(NatParksPalettes) #National Parks color palette
+```
+
+## Obtaining the data
+
+The data I used for this analysis was acquired from QFISH. Within the QFISH website I went into the Shark Control Program database and selected my chosen data to use for the analysis. The data I chose includes the number of animals caught from 2019 to 2023 by region and length category (< 2m, >= 2m and Non Shark). After choosing the data I exported it from QFISH as a .csv file and from there imported it into RStudio.
+
+```{r}
+# import the data
+catch <- read.csv("~/JCU _2023/SP1/MB5370/Module4_R/github/mb5370/data/catchdata.csv", skip = 1)
+```
+
+## Tidying the Data
+
+Once I had acquired and imported the data I then began to tidy it in order to properly analyse and visualize what information the data in the dataset. To make my data tidy I followed the three interrelated rules described by Hadley Wickham in R for Data Science:
+1. Each variable must have its own column.
+2. Each observation must have its own row.
+3. Each value must have its own cell. 
+Furthermore I followed the two instructions that Wickham described to ensure that my data followed these rules. As per the first instruction I put my dataset into a tibble. 
+```{r}
+as_tibble(catch) # convert dataset into tibble
+```
+In the above tibble preview we can see there's a few changes that can be made to tidy up the data. The first change I made was adjusting the column names to make them easier to work with, in particular *X..2m* and *X...2m* to *< 2m* and *>= 2m* respectively. 
+```{r}
+colnames(catch) <- c("area", "year", "< 2m", ">= 2m", "Non Shark") #change the column names to something easier to understand
+```
+
+The next changes I made were using the **pivot_longer()** function. With that function I made a new row called *"category"* where the headers from the three length category rows ("< 2m", ">= 2m", "Non Shark") converted to the values for the new row. The second new row, named *"count"* is where I instructed the values from the "< 2m", ">= 2m", "Non Shark" rows to be placed. Next, I dropped the missing data using the **values_drop_na = TRUE** function as I determined that the missing values were implicit rather than explicit values. Lastly, I set the levels of the category values to that once it's visualized on a graph the legend will be in an appropriate order. 
+```{r}
+tcatch <-catch %>%
+  pivot_longer(c("< 2m", ">= 2m", "Non Shark"), names_to = "category", values_to = "count", values_drop_na = TRUE) #put all length categories in one row and values in a catch count column, drop any missing values
+
+tcatch #view to ensure changes saved
+
+tcatch$category <- factor(tcatch$category, levels = c("< 2m", ">= 2m", "Non Shark")) #set the levels so the legend will be in the best order
+
+```
+
+## Visualizing the data
+
+Once I had tidied the data and deemed it ready to work with I started on the visualization process. As my data contains information from the past five years I wanted to visualize it as a time series to display any changes that in the number of animals caught, thus finding my x axis (year) and y axis (Number of Animals Caught) data. Furthermore I wanted to be able to see what the changes were for each length category (< 2m, >= 2m, Non Shark) while also visualizing the the difference in how many were caught between the categories, to do so I displayed the data grouped by the category. This however did not show where the animals caught. To remedy this I decided to facet the graph by the area so that I could display that information as well. After adjusting the labels on the x axis and ensuring that the axis labels, title, subtitle and caption were all suitable and placing the legend in a position that I felt best suited the graph I played around with the color deciding to go with the "volcanoes" palette from the NatParks palette. 
+```{r}
+ggplot(data = tcatch, mapping = aes(x = year, y = count)) +
+  geom_point(mapping = aes(color = category)) +
+  geom_line(mapping = aes(color = category)) +
+  scale_x_continuous("Year (2019 - 2023)", labels = c("'19", "'20", "'21", "'22", "'23")) +
+  scale_y_continuous("Number of Animals Caught") +
+  scale_color_manual(values = c("< 2m" = "#DE3C37", ">= 2m" = "#79668C", "Non Shark" = "#1E547D")) + #set the colors - chosen from the NatParks Volcanoes palette
+  theme_classic() + #set the theme classic theme has x & y axis lines with no gridlines
+    labs(title = "Marine Catchment by Length", #set the title
+       subtitle = "Number of animals caught by length category within shark control areas", #set the subtitle, sits below the title to add additional information
+       caption = "Data from QFISH") + # set the caption - where the data was acquired or any other additional information'
+  theme(legend.title = element_blank(), #remove the legend title
+        legend.position = "bottom") + #position the legend at the bottom of the graph
+  facet_wrap(~ area, ncol = 4) # facet the graph into four columns by area
+
+ggsave("end-to-end-graph.jpeg", width = 7.29, height = 4.5, units = "in") #export the graph as a 7.29 x 4.5 inch jpeg
+```
+With this graph we can see how many small (<2 m), large (>= 2m) sharks and non sharks have been caught over the last five years in 12 locations around Queensland. From this we can see that Bribie Island has had the least amount of catches, which from the data is around 1 for each length category, whereas Capricorn Coast has had the most, especially in the < 2m category with over 100 catches. 
+
+
+#### Playing around with colors
+```{r}
+display.brewer.all(colorblindFriendly = TRUE) #Try out different color scales and palettes
+brewer.pal(n = 8, name = "Dark2")
+brewer.pal(n = 8, name = "RdBu")
+
+NatParksPalettes::colorblind_palettes #find out which color palettes are color blind friendly
+```
+
+
+Data acquired from:  https://qfish.fisheries.qld.gov.au/
+
+NatParksPalette: https://github.com/kevinsblake/NatParksPalettes
+
+Grolemund, G., & Wickham, H. (2017). R for Data Science. O’Reilly Media.

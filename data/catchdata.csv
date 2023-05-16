@@ -1,0 +1,62 @@
+,,LengthCategory,,
+Area,CalendarYear,< 2m,>= 2m,Non-shark
+Bribie Island,2019,,1,
+Bribie Island,2020,1,,
+Bribie Island,2021,,1,1
+Bribie Island,2022,1,2,1
+Bribie Island,2023,,1,
+Bundaberg,2019,21,37,1
+Bundaberg,2020,26,29,1
+Bundaberg,2021,33,40,2
+Bundaberg,2022,34,30,
+Bundaberg,2023,4,15,2
+Cairns,2019,23,20,
+Cairns,2020,34,28,1
+Cairns,2021,29,29,1
+Cairns,2022,42,18,2
+Cairns,2023,13,7,
+Capricorn Coast,2019,37,1,1
+Capricorn Coast,2020,41,9,1
+Capricorn Coast,2021,102,42,4
+Capricorn Coast,2022,142,36,18
+Capricorn Coast,2023,83,32,3
+Gladstone,2019,36,6,1
+Gladstone,2020,23,6,1
+Gladstone,2021,24,10,3
+Gladstone,2022,36,11,2
+Gladstone,2023,20,6,
+Gold Coast,2019,37,23,70
+Gold Coast,2020,56,26,48
+Gold Coast,2021,47,37,30
+Gold Coast,2022,46,23,33
+Gold Coast,2023,17,10,9
+Mackay,2019,4,40,1
+Mackay,2020,25,43,5
+Mackay,2021,35,58,2
+Mackay,2022,11,50,1
+Mackay,2023,8,17,1
+Nth Stradbroke Is.,2019,2,13,2
+Nth Stradbroke Is.,2020,,14,5
+Nth Stradbroke Is.,2021,3,21,15
+Nth Stradbroke Is.,2022,9,7,12
+Nth Stradbroke Is.,2023,,2,1
+Rainbow Beach,2019,16,18,37
+Rainbow Beach,2020,18,16,41
+Rainbow Beach,2021,23,26,46
+Rainbow Beach,2022,18,25,38
+Rainbow Beach,2023,7,5,6
+Sunshine Coast North,2019,28,28,28
+Sunshine Coast North,2020,35,23,33
+Sunshine Coast North,2021,37,26,35
+Sunshine Coast North,2022,32,28,23
+Sunshine Coast North,2023,28,14,8
+Sunshine Coast South,2019,7,6,5
+Sunshine Coast South,2020,8,1,6
+Sunshine Coast South,2021,10,15,11
+Sunshine Coast South,2022,16,8,12
+Sunshine Coast South,2023,15,5,4
+Townsville,2019,52,30,9
+Townsville,2020,74,56,13
+Townsville,2021,90,60,10
+Townsville,2022,80,47,6
+Townsville,2023,37,23,1
