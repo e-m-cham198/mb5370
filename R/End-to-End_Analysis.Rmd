@@ -62,17 +62,18 @@ ggplot(data = tcatch, mapping = aes(x = year, y = count)) +
   geom_point(mapping = aes(color = category)) +
   geom_line(mapping = aes(color = category)) +
   scale_x_continuous("Year (2019 - 2023)", labels = c("'19", "'20", "'21", "'22", "'23")) +
-  scale_y_continuous("Number of Animals Caught") +
-  scale_color_manual(values = c("< 2m" = "#DE3C37", ">= 2m" = "#79668C", "Non Shark" = "#1E547D")) + #set the colors - chosen from the NatParks Volcanoes palette
+  scale_y_continuous("Number Caught") +
+  scale_color_manual(values = c("< 2m" = "#DE3C37", ">= 2m" = "#79668C", "Non Shark" = "#1E547D"), labels = c("Small Shark (<2m)", "Large Shark (>=2m)", "Non Shark")) + #set the colors - chosen from the NatParks Volcanoes palette
   theme_classic() + #set the theme classic theme has x & y axis lines with no gridlines
     labs(title = "Marine Catchment by Length", #set the title
-       subtitle = "Number of animals caught by length category within shark control areas", #set the subtitle, sits below the title to add additional information
+       subtitle = "Number of sharks caught by length category within shark control areas", #set the subtitle, sits below the title to add additional information
        caption = "Data from QFISH") + # set the caption - where the data was acquired or any other additional information'
   theme(legend.title = element_blank(), #remove the legend title
         legend.position = "bottom") + #position the legend at the bottom of the graph
   facet_wrap(~ area, ncol = 4) # facet the graph into four columns by area
 
 ggsave("end-to-end-graph.jpeg", width = 7.29, height = 4.5, units = "in") #export the graph as a 7.29 x 4.5 inch jpeg
+ggsave("end-to-end-graph.pdf", width = 7.29, height = 4.5, units = "in") #export as 7.29 x 4.5 in pdf
 ```
 With this graph we can see how many small (<2 m), large (>= 2m) sharks and non sharks have been caught over the last five years in 12 locations around Queensland. From this we can see that Bribie Island has had the least amount of catches, which from the data is around 1 for each length category, whereas Capricorn Coast has had the most, especially in the < 2m category with over 100 catches. 
 
